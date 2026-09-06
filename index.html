@@ -472,7 +472,7 @@
     <div>
       <div class="gift-success" id="gift-success" style="display:none">נשלח אליך. תשימו אוזניות ותנו לזה 12 דקות שלמות. 🤍</div>
       <form class="gift-form" id="gift-form">
-        <input type="email" required placeholder="האימייל שלך">
+        <input type="email" required id="gift-email" placeholder="האימייל שלך">
         <button type="submit" class="btn btn-olive">שלחו לי את המדיטציה</button>
       </form>
     </div>
@@ -516,7 +516,7 @@
             <option value="לא בטוח">עוד לא החלטתי</option>
           </select>
         </label>
-        <label class="span2"><span>מה מביא אותך לריטריט?</span><textarea rows="3" placeholder="בשורה־שתיים, כדי שאדע איתך מאיפה להתחיל"></textarea></label>
+        <label class="span2"><span>מה מביא אותך לריטריט?</span><textarea rows="3" id="f-why" placeholder="בשורה־שתיים, כדי שאדע איתך מאיפה להתחיל"></textarea></label>
         <button type="submit" class="reg-submit">שלחו לי פרטים ואחזור אליכם</button>
         <div class="reg-fine">הפרטים נשמרים אצלי בלבד. אין רשימות תפוצה ואין שיווק.</div>
       </form>
@@ -676,20 +676,59 @@ document.querySelectorAll('.faq-item').forEach(item => {
   });
 });
 
+/* ---- form submission ---- */
+const SUBMIT_URL = 'https://zwxuzprtjfpjxzkjunyz.supabase.co/functions/v1/submit-form';
+
 /* ---- gift form ---- */
-document.getElementById('gift-form').addEventListener('submit', e => {
+const giftForm = document.getElementById('gift-form');
+giftForm.addEventListener('submit', async e => {
   e.preventDefault();
-  document.getElementById('gift-form').style.display = 'none';
-  document.getElementById('gift-success').style.display = 'block';
+  const btn = giftForm.querySelector('button');
+  btn.disabled = true;
+  try {
+    const res = await fetch(SUBMIT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'gift', email: document.getElementById('gift-email').value })
+    });
+    if (!res.ok) throw new Error('submit failed');
+    giftForm.style.display = 'none';
+    document.getElementById('gift-success').style.display = 'block';
+  } catch (err) {
+    btn.disabled = false;
+    alert('משהו השתבש בשליחה. נסו שוב או כתבו לנו בוואטסאפ.');
+  }
 });
 
 /* ---- registration form ---- */
-document.getElementById('reg-form').addEventListener('submit', e => {
+const regForm = document.getElementById('reg-form');
+regForm.addEventListener('submit', async e => {
   e.preventDefault();
+  const btn = regForm.querySelector('.reg-submit');
+  btn.disabled = true;
   const name = document.getElementById('f-name').value || '';
-  document.getElementById('reg-success-name').textContent = 'קיבלתי, ' + name + '.';
-  document.getElementById('reg-form').style.display = 'none';
-  document.getElementById('reg-success').style.display = 'block';
+  const payload = {
+    type: 'registration',
+    name,
+    phone: document.getElementById('f-phone').value,
+    email: document.getElementById('f-mail').value,
+    room: document.getElementById('f-room').value,
+    message: document.getElementById('f-why').value
+  };
+  try {
+    const res = await fetch(SUBMIT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('submit failed');
+    document.getElementById('reg-success-name').textContent = 'קיבלתי, ' + name + '.';
+    regForm.style.display = 'none';
+    document.getElementById('reg-success').style.display = 'block';
+  } catch (err) {
+    btn.disabled = false;
+    alert('משהו השתבש בשליחה. נסו שוב או כתבו לנו בוואטסאפ.');
+  }
 });
 
 /* ---- header scroll state ---- */
